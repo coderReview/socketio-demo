@@ -83,6 +83,8 @@
     function sendDisconnect() {
       if (socket === null) return;
       token = $('#token').val();
+      userName = $('#userName').val();
+      eventId = $('#eventId').val();
       socket.emit('goOffline', {
         userName: userName,
         eventId: eventId,
@@ -94,6 +96,9 @@
 
     function joinRoom() {
       if (socket === null) return;
+      token = $('#token').val();
+      userName = $('#userName').val();
+      eventId = $('#eventId').val();
       toUserName = $('#toUserName').val();
       console.log('joining');
       socket.emit('joinRoom', {
@@ -105,6 +110,9 @@
 
     function sendMessage() {
       if (socket === null) return;
+      token = $('#token').val();
+      userName = $('#userName').val();
+      eventId = $('#eventId').val();
       var message = $('#msg').val();
       $('#msg').val('');
       var jsonObject = {
@@ -115,6 +123,10 @@
         conversationId: conversationId
       };
       socket.emit('message', jsonObject);
+    }
+
+    function clearConsole() {
+      $('#console').empty();
     }
 
     function output(message) {
@@ -142,11 +154,11 @@
 
   <form class="well form-inline" onsubmit="return false;">
     <label for="token">Token:</label>
-    <input id="token" class="input-xlarge" type="text" placeholder="Enter token" value="f4bfa8ac-7336-4c21-ba70-42731ada875b" />
+    <input id="token" class="input-xlarge" type="text" placeholder="Enter token" value="21a16307-e814-4bed-ab12-6f05215cf090" />
     <label for="eventId">Event Id:</label>
     <input id="eventId" class="input-xlarge" type="text" placeholder="Enter event id" value="3ba3507f-3c9f-4c39-b5a3-f31269c768c8" />
     <label for="userName">User Id:</label>
-    <input id="userName" class="input-xlarge" type="text" placeholder="Enter user id" value="d52c7476-2d62-40dc-abcb-c6861260f3ae" />
+    <input id="userName" class="input-xlarge" type="text" placeholder="Enter user id" value="4f40df34-844d-434e-8e1e-510e411248ac" />
     <button type="button" onClick="sendConnect()" class="btn">Connect</button>
     <button type="button" onClick="sendDisconnect()" class="btn">Disconnect</button>
     <br /><br />
@@ -161,6 +173,8 @@
       <input id="msg" class="input-xlarge" type="text" placeholder="Type something..." />
       <button type="button" onClick="sendMessage()" class="btn" id="send">Send</button>
     </div>
+    <br />
+    <button type="button" onClick="clearConsole()" class="btn" id="clear">Clear</button>
   </form>
 
 </body>
