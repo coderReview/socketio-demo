@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+
+        <title>Demo Chat</title>
+
+        <link href="bootstrap.css" rel="stylesheet">
+
+	<style>
+		body {
+			padding:20px;
+		}
+		.console {
+			height: 400px;
+			overflow: auto;
+		}
+		.username-msg {color:orange;}
+		.connect-msg {color:green;}
+		.disconnect-msg {color:red;}
+		.send-msg {color:#888}
+	</style>
+
+
+	<script src="js/socket.io/socket.io.js"></script>
+        <script src="js/moment.min.js"></script>
+        <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+
+	<script>
+        
+        var chatSocketBaseUrl = 'http://localhost:9092/';
+        var chat1Socket = io.connect(chatSocketBaseUrl);
+
+                function updateChatCompanyId() {
+                    var chat1SocketUrl = chatSocketBaseUrl + document.getElementById('companyId').value;
+                    // alert(chat1SocketUrl);
+                    chat1Socket =  io.connect(chat1SocketUrl);
+                    var roomName =  document.getElementById('userName1').value +"-"+ document.getElementById('userName2').value;
+
+                    var jsonObject = {'@class': 'com.corundumstudio.socketio.demo.ChatObject',
+                            userName: document.getElementById('userName1').value,
+                            toUserName: document.getElementById('userName2').value,
+                            message: ''};
+
+                    
+                    document.getElementById('socketId').value = customStringify(chat1Socket);
+
+                    chat1Socket.on('connect', connectHandler('#chat1'));
+                    chat1Socket.on('message', messageHandler('#chat1'));
+                    chat1Socket.on('disconnect', disconnectHandler('#chat1'));
+                }
+
+                function customStringify(v) {
+                  const cache = new Set();
+                  return JSON.stringify(v, function (key, value) {
+                    if (typeof value === 'object' && value !== null) {
+                      if (cache.has(value)) {
+                        // Circular reference found, discard key
+                        return;
+                      }
+                      // Store value in our set
+                      cache.add(value);
+                    }
+                    return value;
+                  });
+                };
+
+                function connectHandler(parentId) {
+			return function() {
+                            output('<span class="connect-msg">Client has connected to the server!</span>', parentId);
+                        }
+                }
+
+                function messageHandler(parentId) {
+                        return function(data) {
+			     output('<span class="username-msg">' + data.userName + ':</span> ' + data.message, parentId);
+		        }
+                }
+
+                function disconnectHandler(parentId) {
+                        return function() {
+			     output('<span class="disconnect-msg">The client has disconnected!</span>', parentId);
+                        }
+                }
+
+		function sendMessageHandler(parentId, userName, toUserName, chatSocket) {
+                        var message = $(parentId + ' .msg').val();
+                        $(parentId + ' .msg').val('');
+
+                        var jsonObject = {'@class': 'com.corundumstudio.socketio.demo.ChatObject',
+                                          userName: userName,
+                                          toUserName: toUserName,
+                                          message: message};
+
+                        chatSocket.emit('message', jsonObject);
+
+                        // chatSocket.json.send(jsonObject);
+
+                        console.log(chatSocket.id + " now in rooms ", chatSocket.rooms);
+		}
+
+
+                function sendDisconnect1() {
+                        chat1Socket.disconnect();
+                }
+
+
+		function sendMessage1() {
+                        sendMessageHandler('#chat1', document.getElementById('userName1').value, document.getElementById('userName2').value, chat1Socket);
+		}
+
+
+		function output(message, parentId) {
+                        var currentTime = "<span class='time'>" +  moment().format('HH:mm:ss.SSS') + "</span>";
+                        var element = $("<div>" + currentTime + " " + message + "</div>");
+			$(parentId + ' .console').prepend(element);
+		}
+
+        $(document).keydown(function(e){
+            if(e.keyCode == 13) {
+                $('#send').click();
+            }
+        });
+	</script>
+</head>
+
+<body>
+
+	<h1>Namespaces demo chat</h1>
+
+	<br/>
+
+        <div id="chat1" style="float: left;">
+            <input id="companyId" type="text" placeholder="Type companyId..."/>
+            <input id="userName1" type="text" placeholder="Type userName1..."/>
+            <input id="userName2" type="text" placeholder="Type userName2..."/>
+            <input id="socketId" type="text" placeholder="socketId..."/>
+            <button type="button" onClick="updateChatCompanyId()" class="btn" id="connect">Connect</button>
+            
+            <h4>chat1</h4>
+            <div class="console well">
+            </div>
+
+            <form class="well form-inline" onsubmit="return false;">
+               <input class="msg input-xlarge" type="text" placeholder="Type something..."/>
+               <button type="button" onClick="sendMessage1()" class="btn" id="send">Send</button>
+               <button type="button" onClick="sendDisconnect1()" class="btn">Disconnect</button>
+            </form>
+        </div>
+
+</body>
+
+</html>

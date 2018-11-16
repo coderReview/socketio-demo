@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+
+  <meta charset="utf-8" />
+
+  <title>Demo Chat</title>
+
+  <link href="bootstrap.css" rel="stylesheet">
+
+  <style>
+    body {
+			padding:20px;
+		}
+		#console {
+			height: 400px;
+			overflow: auto;
+		}
+		.username-msg {color:orange;}
+		.connect-msg {color:green;}
+		.disconnect-msg {color:red;}
+		.send-msg {color:#888}
+	</style>
+
+
+  <script src="js/socket.io/socket.io.js"></script>
+  <script src="js/moment.min.js"></script>
+  <script src="http://code.jquery.com/jquery-1.10.1.min.js"></script>
+
+  <script>
+    var eventId, userName, token, toUserName, onlineList, conversationId;
+    var socket = io('https://m3-wipro-attendee-dev.herokuapp.com/a8aeacfa-6785-41ca-b752-421bdca13154');
+    socket.on('connect', function () {
+      output('<span class="connect-msg">Client has connected to the server!</span>');
+      socket.emit('goOnline', {
+        eventId: eventId,
+        token: token
+      });
+    });
+
+    socket.on('message', function (data) {
+      output('<span class="username-msg">' + data.userName + ':</span> ' + data.message);
+    });
+
+    socket.on('goOnline', function (listStr) {
+      onlineList = JSON.parse(listStr);
+      onlineList.forEach(function (data) {
+        output('<span class="connect-msg">User ' + data.fullName + ' online</span>');
+      });
+      $('#joinArea').show();
+    });
+
+    socket.on('goOffline', function (dataStr) {
+      data = JSON.parse(dataStr);
+      output('<span class="disconnect-msg">User ' + data.fullName + ' offline</span>');
+      $('#joinArea').hide();
+    });
+
+    socket.on('joinRoom', function (data) {
+      conversationId = data.conversationId;
+      output('<span class="connect-msg">Join room ' + data.conversationId + ' </span>');
+      $('#joinArea').hide();
+    });
+
+    socket.on('leaveRoom', function (data) {
+      conversationId = null;
+      output('<span class="disconnect-msg">Leave room ' + data.conversationId + ' </span>');
+      $('#joinArea').show();
+    });
+
+    socket.on('disconnect', function () {
+      output('<span class="disconnect-msg">The client has disconnected!</span>');
+    });
+
+    function sendConnect() {
+      token = $('#token').val();
+      userName = $('#userName').val();
+      eventId = $('#eventId').val();
+      socket.connect();
+    }
+
+    function sendDisconnect() {
+      if (socket === null) return;
+      token = $('#token').val();
+      socket.emit('goOffline', {
+        userName: userName,
+        eventId: eventId,
+        token: token
+      }, function () {
+        socket.disconnect();
+      });
+    }
+
+    function joinRoom() {
+      if (socket === null) return;
+      toUserName = $('#toUserName').val();
+      console.log('joining');
+      socket.emit('joinRoom', {
+        userName: userName,
+        toUserName: toUserName,
+        token: token
+      });
+    }
+
+    function sendMessage() {
+      if (socket === null) return;
+      var message = $('#msg').val();
+      $('#msg').val('');
+      var jsonObject = {
+        userName: userName,
+        toUserName: toUserName,
+        message: message,
+        token: token,
+        conversationId: conversationId
+      };
+      socket.emit('message', jsonObject);
+    }
+
+    function output(message) {
+      var currentTime = "<span class='time'>" + moment().format('HH:mm:ss.SSS') + "</span>";
+      var element = $("<div>" + currentTime + " " + message + "</div>");
+      $('#console').prepend(element);
+    }
+
+    $(document).keydown(function (e) {
+      if (e.keyCode == 13) {
+        $('#send').click();
+      }
+    });
+  </script>
+</head>
+
+<body>
+
+  <h1>Netty-socketio Demo Chat</h1>
+
+  <br />
+
+  <div id="console" class="well">
+  </div>
+
+  <form class="well form-inline" onsubmit="return false;">
+    <label for="token">Token:</label>
+    <input id="token" class="input-xlarge" type="text" placeholder="Enter token" value="f4bfa8ac-7336-4c21-ba70-42731ada875b" />
+    <label for="eventId">Event Id:</label>
+    <input id="eventId" class="input-xlarge" type="text" placeholder="Enter event id" value="3ba3507f-3c9f-4c39-b5a3-f31269c768c8" />
+    <label for="userName">User Id:</label>
+    <input id="userName" class="input-xlarge" type="text" placeholder="Enter user id" value="d52c7476-2d62-40dc-abcb-c6861260f3ae" />
+    <button type="button" onClick="sendConnect()" class="btn">Connect</button>
+    <button type="button" onClick="sendDisconnect()" class="btn">Disconnect</button>
+    <br /><br />
+    <div id="#joinArea">
+      <label for="toUserName">Other User Id:</label>
+      <input id="toUserName" class="input-xlarge" type="text" placeholder="User Id" value="d52c8476-2d63-40dc-abcb-c6861260f3ae" />
+      <button type="button" onClick="joinRoom()" class="btn">Join</button>
+    </div>
+    <br />
+    <div id="#msgArea">
+      <label for="toUserName">Msg</label>
+      <input id="msg" class="input-xlarge" type="text" placeholder="Type something..." />
+      <button type="button" onClick="sendMessage()" class="btn" id="send">Send</button>
+    </div>
+  </form>
+
+</body>
+
+</html>
