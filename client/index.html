@@ -30,7 +30,8 @@
 
   <script>
     var eventId, userName, token, toUserName, onlineList, conversationId;
-    var socket = io('https://m3-wipro-attendee-dev.herokuapp.com/a8aeacfa-6785-41ca-b752-421bdca13154');
+    // var socket = io('https://m3-wipro-attendee-dev.herokuapp.com/a8aeacfa-6785-41ca-b752-421bdca13154');
+    var socket = io('http://localhost:9092/a8aeacfa-6785-41ca-b752-421bdca13154');
     socket.on('connect', function () {
       output('<span class="connect-msg">Client has connected to the server!</span>');
       socket.emit('goOnline', {
@@ -45,28 +46,22 @@
 
     socket.on('goOnline', function (listStr) {
       onlineList = JSON.parse(listStr);
-      onlineList.forEach(function (data) {
-        output('<span class="connect-msg">User ' + data.fullName + ' online</span>');
-      });
-      $('#joinArea').show();
+      output('<span class="connect-msg">Users ' + onlineList.map(function(o) { return o.fullName}).join(',') + ' online</span>');
     });
 
     socket.on('goOffline', function (dataStr) {
       data = JSON.parse(dataStr);
       output('<span class="disconnect-msg">User ' + data.fullName + ' offline</span>');
-      $('#joinArea').hide();
     });
 
     socket.on('joinRoom', function (data) {
       conversationId = data.conversationId;
-      output('<span class="connect-msg">Join room ' + data.conversationId + ' </span>');
-      $('#joinArea').hide();
+      output('<span class="connect-msg">Joined room ' + data.userName + ' </span>');
     });
 
     socket.on('leaveRoom', function (data) {
+      output('<span class="disconnect-msg">Left room ' + data.userName + ' </span>');
       conversationId = null;
-      output('<span class="disconnect-msg">Leave room ' + data.conversationId + ' </span>');
-      $('#joinArea').show();
     });
 
     socket.on('disconnect', function () {
@@ -100,8 +95,20 @@
       userName = $('#userName').val();
       eventId = $('#eventId').val();
       toUserName = $('#toUserName').val();
-      console.log('joining');
       socket.emit('joinRoom', {
+        userName: userName,
+        toUserName: toUserName,
+        token: token
+      });
+    }
+
+    function leaveRoom() {
+      if (socket === null) return;
+      token = $('#token').val();
+      userName = $('#userName').val();
+      eventId = $('#eventId').val();
+      toUserName = $('#toUserName').val();
+      socket.emit('leaveRoom', {
         userName: userName,
         toUserName: toUserName,
         token: token
@@ -166,6 +173,7 @@
       <label for="toUserName">Other User Id:</label>
       <input id="toUserName" class="input-xlarge" type="text" placeholder="User Id" value="d52c8476-2d63-40dc-abcb-c6861260f3ae" />
       <button type="button" onClick="joinRoom()" class="btn">Join</button>
+      <button type="button" onClick="leaveRoom()" class="btn">Leave</button>
     </div>
     <br />
     <div id="#msgArea">
